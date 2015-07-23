@@ -67,7 +67,7 @@ var getHandler = function(stdin, stdout) {
 				if(stdin.disconnect) {
 					stdin.unpipe(stream);
 					console.log('container stop');
-					container.remove(function(err, data){
+					container.stop(function(err, data){
 					});
 				}
 				stdin.on('resize', function(data){
@@ -76,7 +76,7 @@ var getHandler = function(stdin, stdout) {
 				stdin.on('data', function(key) {
 					// Detects it is detaching a running container
 					if (previousKey === CTRL_P && key === CTRL_Q) {
-						container.remove(function(err,data){
+						container.stop(function(err,data){
 						});
 					}
 					previousKey = key;
@@ -85,7 +85,7 @@ var getHandler = function(stdin, stdout) {
 				stdin.on('disconnect', function(){
 					stdin.unpipe(stream);
 					console.log('container stop');
-					container.remove(function(err, data){
+					container.stop(function(err, data){
 					});
 				});
 

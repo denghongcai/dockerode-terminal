@@ -26,6 +26,7 @@ io.on('connection', function(socket){
 		stdin.push(data);
 	});
 	socket.on('resize', function(data){
+		stdin.['resize'] = data;
 		stdin.emit('resize', data);
 	});
 	socket.on('disconnect', function(){
