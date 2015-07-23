@@ -6,6 +6,10 @@ var Docker = require('./docker');
 var stream = require('stream');
 app.use(express.static(__dirname + '/public'));
 io.on('connection', function(socket){
+	if(Docker.currentInstance > 10) {
+		socket.disconnect();
+		return;
+	}
 	console.log('connect');
 	var stdin = new stream.Readable();
 	stdin['disconnect'] = false;
@@ -36,9 +40,11 @@ process.on('SIGINT', function () {
 	Docker.docker.listContainers(function (err, containers) {
 		containers.forEach(function (containerInfo, index, arr) {
 			Docker.docker.getContainer(containerInfo.Id).stop(function(err, data){
-				if(index === array.length -1 ) {
-					process.exit(0);
-				}
+				Docker.docker.getContainer(containerInfo.Id).remove(function(err, data){
+					if(index === arr.length -1 ) {
+						process.exit(0);
+					}
+				});
 			});
 		});
 	});

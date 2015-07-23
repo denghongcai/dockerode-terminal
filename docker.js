@@ -16,6 +16,12 @@ var optsc = {
   'AttachStdout': true,
   'AttachStderr': true,
   'Tty': true,
+  'HostConfig': {
+     'Memory': 64*1024*1024,
+     'MemorySwap': 64*1024*1024,
+     'CpuShares': 10,
+     'BlkioWeight': 10,
+   },
   'OpenStdin': true,
   'StdinOnce': false,
   'Env': null,
@@ -57,10 +63,11 @@ var getHandler = function(stdin, stdout) {
 			});
 
 			container.start(function(err, data) {
+				this.currentInstance++;
 				if(stdin.disconnect) {
 					stdin.unpipe(stream);
 					console.log('container stop');
-					container.stop(function(err, data){
+					container.remove(function(err, data){
 					});
 				}
 				stdin.on('resize', function(data){
@@ -69,7 +76,7 @@ var getHandler = function(stdin, stdout) {
 				stdin.on('data', function(key) {
 					// Detects it is detaching a running container
 					if (previousKey === CTRL_P && key === CTRL_Q) {
-						container.stop(function(err,data){
+						container.remove(function(err,data){
 						});
 					}
 					previousKey = key;
@@ -78,17 +85,18 @@ var getHandler = function(stdin, stdout) {
 				stdin.on('disconnect', function(){
 					stdin.unpipe(stream);
 					console.log('container stop');
-					container.stop(function(err, data){
+					container.remove(function(err, data){
 					});
 				});
 
 				container.wait(function(err, data) {
+					this.currentInstance--;
 					console.log('container exit');
 				});
-			});
+			}.bind(this));
 
-		});
-	}
+		}.bind(this));
+	}.bind(this);
 
 };
 
