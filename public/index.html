@@ -30,7 +30,6 @@
   }
 */
 </style>
-<h1>term.js</h1>
 <script src="/socket.io/socket.io.js"></script>
 <script src="term.js"></script>
 <script>
@@ -43,7 +42,7 @@
         rows: 24,
         useStyle: true,
         screenKeys: true,
-        cursorBlink: false
+        cursorBlink: true
       });
 
       term.on('data', function(data) {
@@ -56,7 +55,19 @@
 
       term.open(document.body);
 
-      term.write('\x1b[31mWelcome to term.js!\x1b[m\r\n');
+      term.write('\x1b[31mWelcome to CloudIDE!\x1b[m\r\n');
+
+      window.onresize = function(event) {
+        var height = window.innerHeight - 16;
+	var width = window.innerWidth - 16;
+	var data = {};
+	data['cols'] = Math.floor(width / document.getElementsByClassName('terminal')[0].clientWidth * term.cols);
+	data['rows'] = Math.floor(height / document.getElementsByClassName('terminal')[0].clientHeight * term.rows); 
+	term.resize(data.cols, data.rows);
+	socket.emit('resize', data);
+      };
+
+      window.onresize();
 
       socket.on('data', function(data) {
         term.write(data);

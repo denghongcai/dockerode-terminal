@@ -31,10 +31,10 @@ var previousKey,
     CTRL_Q = '\u0011';
 
 // Resize tty
-function resize (container) {
+function resize(container, data) {
   var dimensions = {
-    h: process.stdout.rows,
-    w: process.stderr.columns
+    h: data.rows,
+    w: data.cols
   };
 
   if (dimensions.h != 0 && dimensions.w != 0) {
@@ -44,6 +44,10 @@ function resize (container) {
 
 var getHandler = function(stdin, stdout) {
 	return function handler(err, container) {
+		if(err) {
+			console.error(err);
+			return;
+		}
 		var attach_opts = {stream: true, stdin: true, stdout: true, stderr: true};
 		container.attach(attach_opts, function(err, stream){
 			stream.setEncoding('utf8');
@@ -52,13 +56,32 @@ var getHandler = function(stdin, stdout) {
 				stdout.push(data);
 			});
 
-			stdin.on('data', function(key) {
-				// Detects it is detaching a running container
-				if (previousKey === CTRL_P && key === CTRL_Q) container.stop();
-				previousKey = key;
-			});
-
 			container.start(function(err, data) {
+				if(stdin.disconnect) {
+					stdin.unpipe(stream);
+					console.log('container stop');
+					container.stop(function(err, data){
+					});
+				}
+				stdin.on('resize', function(data){
+					resize(container, data);
+				});
+				stdin.on('data', function(key) {
+					// Detects it is detaching a running container
+					if (previousKey === CTRL_P && key === CTRL_Q) {
+						container.stop(function(err,data){
+						});
+					}
+					previousKey = key;
+				});
+
+				stdin.on('disconnect', function(){
+					stdin.unpipe(stream);
+					console.log('container stop');
+					container.stop(function(err, data){
+					});
+				});
+
 				container.wait(function(err, data) {
 					console.log('container exit');
 				});
@@ -70,8 +93,10 @@ var getHandler = function(stdin, stdout) {
 };
 
 module.exports = {
+	currentInstance: 0,
+	docker: docker,
 	create: function(stdin, stdout){
-		docker.createContainer(optsc, getHandler(stdin, stdout));
+		docker.createContainer(optsc, getHandler(stdin, stdout).bind(this));
 	}
 }
 
