@@ -32,13 +32,15 @@ io.on('connection', function(socket){
 
 });
 
-/*
 process.on('SIGINT', function () {
 	Docker.docker.listContainers(function (err, containers) {
-		containers.forEach(function (containerInfo) {
-			Docker.docker.getContainer(containerInfo.Id).stop(function(err, data){});
+		containers.forEach(function (containerInfo, index, arr) {
+			Docker.docker.getContainer(containerInfo.Id).stop(function(err, data){
+				if(index === array.length -1 ) {
+					process.exit(0);
+				}
+			});
 		});
 	});
 });
-*/
 server.listen(3000);
